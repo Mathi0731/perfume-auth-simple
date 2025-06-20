@@ -1,4 +1,4 @@
-Flask
-flask-mysqldb
-qrcode
-pymysql
+Flask==2.2.5
+flask-mysqldb==0.2.0
+qrcode==7.4.2
+wheel
