@@ -3,3 +3,6 @@ builder = "NIXPACKS"
 
 [env]
 PYTHONUNBUFFERED = "1"
+
+[deploy]
+start = "python main.py"

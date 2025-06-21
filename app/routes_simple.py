@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, current_app
+from flask import Blueprint, render_template, request, current_app, render_template_string
 import qrcode, os
 from urllib.parse import quote, unquote
 
@@ -14,18 +14,19 @@ def simple_add():
         serial = request.form['serial']
         mfg_date = request.form['mfg_date']
 
-        # Save to DB
-        cursor = current_app.mysql.connection.cursor()
+        # Save to DB using PyMySQL
+        conn = current_app.config["get_db_connection"]()
+        cursor = conn.cursor()
         cursor.execute("INSERT INTO products (brand, serial, mfg_date) VALUES (%s, %s, %s)",
                        (brand, serial, mfg_date))
-        current_app.mysql.connection.commit()
-
-        # Create QR data as a URL
-        qr_data = f"{brand}|{serial}|{mfg_date}"
-        encoded = quote(qr_data)  # URL-safe
-        qr_url = f"https://your-project.up.railway.app/auto-verify?data={encoded}"  # 🔁 Update this to match your Railway URL
+        conn.commit()
+        conn.close()
 
         # Generate QR
+        qr_data = f"{brand}|{serial}|{mfg_date}"
+        encoded = quote(qr_data)
+        qr_url = f"https://your-project.up.railway.app/auto-verify?data={encoded}"  # Update URL!
+
         img = qrcode.make(qr_url)
         qr_path = f"{QR_FOLDER}/simple_{serial}.png"
         img.save(qr_path)
@@ -37,22 +38,23 @@ def simple_add():
 
 @simple.route('/auto-verify')
 def auto_verify():
-    from flask import render_template_string
     try:
         qr_data = request.args.get('data')
         decoded = unquote(qr_data)
         brand, serial, mfg_date = decoded.split('|')
 
-        cursor = current_app.mysql.connection.cursor()
+        conn = current_app.config["get_db_connection"]()
+        cursor = conn.cursor()
         cursor.execute("SELECT * FROM products WHERE serial=%s", (serial,))
         record = cursor.fetchone()
+        conn.close()
 
-        if record and record[1] == brand and str(record[3]) == mfg_date:
+        if record and record['brand'] == brand and str(record['mfg_date']) == mfg_date:
             result = "✅ Product is VALID"
         else:
             result = "❌ Product is FAKE or TAMPERED"
-    except:
-        result = "⚠️ Invalid QR Code or data"
+    except Exception as e:
+        result = f"⚠️ Invalid QR Code or data: {str(e)}"
 
     return render_template_string(f"""
         <h2>Verification Result</h2>

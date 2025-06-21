@@ -1,28 +1,29 @@
 from flask import Flask
 from app.routes_simple import simple
-
-# ✅ Patch PyMySQL to act like MySQLdb
 import pymysql
-pymysql.install_as_MySQLdb()
-
-from flask_mysqldb import MySQL
+import os
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
 
-# ✅ Railway-compatible MySQL environment variables
-import os
-app.config['MYSQL_HOST'] = os.getenv('MYSQLHOST', 'localhost')
-app.config['MYSQL_USER'] = os.getenv('MYSQLUSER', 'root')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQLPASSWORD', '1234')
-app.config['MYSQL_DB'] = os.getenv('MYSQLDATABASE', 'perfume_auth')
-app.config['MYSQL_PORT'] = int(os.getenv('MYSQLPORT', 3306))  # Optional but safer
+# ✅ Environment variables for Railway MySQL
+db_config = {
+    "host": os.getenv("MYSQLHOST"),
+    "user": os.getenv("MYSQLUSER"),
+    "password": os.getenv("MYSQLPASSWORD"),
+    "database": os.getenv("MYSQLDATABASE"),
+    "port": int(os.getenv("MYSQLPORT")),
+    "cursorclass": pymysql.cursors.DictCursor
+}
 
-# Initialize MySQL and assign to app context
-mysql = MySQL(app)
-app.mysql = mysql
+# ✅ Function to create DB connection
+def get_db_connection():
+    return pymysql.connect(**db_config)
 
-# Register Blueprint routes
+# Attach to app context
+app.config["get_db_connection"] = get_db_connection
+
+# Register blueprint
 app.register_blueprint(simple)
 
 if __name__ == '__main__':
