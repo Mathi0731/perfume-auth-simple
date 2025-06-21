@@ -30,5 +30,5 @@ app.config["get_db_connection"] = get_db_connection
 app.register_blueprint(simple)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
+    port = int(os.environ.get("PORT", 5000))  # Railway sets PORT dynamically
+    app.run(host="0.0.0.0", port=port)
