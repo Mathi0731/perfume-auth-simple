@@ -25,7 +25,8 @@ def simple_add():
         # Generate QR
         qr_data = f"{brand}|{serial}|{mfg_date}"
         encoded = quote(qr_data)
-        qr_url = f"https://your-project.up.railway.app/auto-verify?data={encoded}"  # Update URL!
+        qr_url = f"https://perfume-auth-simple-production.up.railway.app/auto-verify?data={encoded}"
+
 
         img = qrcode.make(qr_url)
         qr_path = f"{QR_FOLDER}/simple_{serial}.png"
